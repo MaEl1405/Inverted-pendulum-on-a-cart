@@ -1,13 +1,17 @@
 clc; clear; close all;
 
-% Define system parameters
-m = 0.1;   % Mass of pendulum
-M = 0.3;   % Mass of cart
-l = 0.5;   % Length of the pendulum
-d = 0.1;   % Damping coefficient
+%%  Define system parameters
 
+m=0.1;
+M=0.3;
+L=0.5;
+b=0.00008 ;
+c= 0.7;
+I=0.0007;
+
+%% 
 % Create an Inverted Pendulum on Cart object
-Invp = InvPendOnCart(m, M, l, d);
+Invp = InvPendOnCart(m,M,L,c,b,I);
 
 % Linearize the system to obtain state-space matrices A and B
 [A, B] = Invp.Linearization();
@@ -16,14 +20,14 @@ Invp = InvPendOnCart(m, M, l, d);
 wr = [0 0 pi 0]';
 
 % Define the initial state
-x0 = [0.2; 0; 160 * (pi / 180); 0];
+x0 = [0; 0; 150 * (pi / 180); 0];
 
 % Define the time span for simulation
 tspan = [0 10];
 
 % Define the Q and R matrices for LQR control
 Q = eye(4);     % State cost matrix
-R = 0.001;      % Control cost matrix
+R = 0.00035;      % Control cost matrix
 
 % Calculate the LQR gain matrix K
 K = lqr(A, B, Q, R);
@@ -35,22 +39,22 @@ u = @(x) K * (wr - x);
 f = @(t, x) Invp.computeDynamics(x, u(x));
 
 % Define the time step and time vector
-dt=0.01;
-ttime = tspan(1):dt:tspan(end);
+h=0.001;
+ttime = tspan(1):h:tspan(end);
 
 % Simulate the system using ODE45
-[T, X] = odeSolver(f, ttime, dt,x0 ,'Rungekutta4');
+[T, X] = odeSolver(f,ttime,h,x0,'Rungekutta4');
 
 % Plot the results
-figure(1);
-% Animation loop to visualize the motion of the pendulum
-for i = 1:20:length(T)
-    Invp.motionPlot(X(i, 1), X(i, 3));
+%Animation loop to visualize the motion of the pendulum
+for ii = 1:100:length(T)
+    Invp.motionPlot(X(ii, 1), X(ii, 3));
     pause(0.1);
-    if i~=length(T)
+    if ii~=length(T)
       clf;
-    end 
-    title('Lqr Controller For linearized System')
+    end
+    title('LQR Controller For linearized System')
+    
  end
 
 % Plot the state variables over time
