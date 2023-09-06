@@ -9,25 +9,28 @@
 %       - M: Mass of the cart (kg)
 %       - L: Length of the pendulum (m)
 %       - g: Gravitational acceleration (m/s^2)
-%       - d: Damping coefficient for the cart (N*s/m)
+%       - b: Viscous coefficient for the cart (N*m/rad/s)
+%       - c: Viscous friction coefficient for cart displacement
 %       
 %
 %   Methods:
 %       - computeDynamics: Compute the system dynamics.
 %
 %   Example:
-%       pendulum = InvPendOnCart(0.1,1.0,0.5,9.81,0.01,[0, 0, pi/4, 0]);
+%       pendulum = InvPendOnCart(0.1,0.3,0.5,0.7,0.00008,0.0007);
 %
 classdef InvPendOnCart
     properties
         m       % bob mass
         M       % Cart mass
         L       % Pendulum length
-        d       % Damping Coefficient 
+        b       % Viscous Damping Coefficient (Pendulum)
+        c       % Friction damping (Cart)
+        I       % Mass moment of inertia
     end
 
     properties(Constant)
-        g=-9.8; %gravitational acceleration
+        g=9.81; %gravitational acceleration
 
         % properties for animation
         W =0.32       %cart with;
@@ -37,7 +40,7 @@ classdef InvPendOnCart
 
     methods
         % Constructor method
-        function obj = InvPendOnCart(mPend,mCart,length,damping)
+        function obj = InvPendOnCart(mPend,mCart,L,v_frict,v_damp,Inertia)
             % InvPendOnCart constructor.
             %
             %   Creates an instance of the InvPendOnCart class with the 
@@ -51,8 +54,11 @@ classdef InvPendOnCart
             %
             obj.m = mPend;
             obj.M = mCart;
-            obj.L = length;
-            obj.d = damping;
+            obj.L = L;
+            obj.b = v_damp;
+            obj.c = v_frict;
+            obj.I = Inertia;
+
         end %End of Constructor Method
 
         % Function to compute dynamics
@@ -68,21 +74,31 @@ classdef InvPendOnCart
             %   dx - Time derivative of the state vector
             %        [x_dot, x_ddot, theta_dot, theta_ddot]
             %
-
+           
            
             % State space reprsentation
-            Sx = sin(X(3));
-            Cx = cos(X(3));
-            D = obj.m * obj.L^2 * (obj.M + obj.m * (1 - Cx^2));
+            dx = zeros(4,1);
+           
+            x_dot = X(2);
+            Sth = sin(X(3));
+            Cth = cos(X(3));
+            theta_dot = X(4);
+         
+
+            D = obj.m^2 * obj.L^2 * Sth^2  + obj.m * obj.M * obj.L^2 ...
+                +(obj.M+ obj.m) * obj.I;
+
 
             dx(1,1) = X(2);
-            dx(2,1) = (1/D)*(-(obj.m)^2*(obj.L)^2*(obj.g)*Cx*Sx +... 
-                (obj.m)*(obj.L)^2*((obj.m)*(obj.L)*X(4)^2*Sx ...
-                - (obj.d)*X(2))) + (obj.m)*(obj.L)*(obj.L)*(1/D)*u;
+            dx(2,1) = (obj.b * obj.m * obj.L*theta_dot * Cth  + obj.m^2*obj.L^2*obj.g ...
+                *Sth * Cth  + (obj.I + obj.m * obj.L^2)*...
+                (u - obj.c * x_dot + obj.m * obj.L * theta_dot^2 * Sth) )/D;
             dx(3,1) = X(4);
-            dx(4,1) = (1/D)*((obj.m+obj.M)*(obj.m)*(obj.g)*(obj.L)*Sx ...
-                - (obj.m)*(obj.L)*Cx*((obj.m)*(obj.L)*X(4)^2*Sx ... 
-                 -(obj.d)*X(2))) - (obj.m)*(obj.L)*Cx*(1/D)*u;
+            dx(4,1) = -(u * obj.m * obj.L * Cth - obj.c * obj.m * obj.L * ...
+                x_dot * Cth + obj.m^2 * obj.L^2 ...
+                *theta_dot^2 * Sth * Cth + (obj.m + obj.M ) * (obj.b ...
+                * theta_dot + obj.m * obj.g * obj.L * Sth))/D;    
+
         end % End of computeDynamics
 
         function [A, B] = Linearization(obj)
@@ -108,23 +124,26 @@ classdef InvPendOnCart
             f = zeros(4, 1, 'sym');
 
             % Compute sine and cosine of the angle theta
-            Sx = sin(X(3));
-            Cx = cos(X(3));
+            Sth = sin(X(3));
+            Cth = cos(X(3));
+            x_dot = X(2);
+            theta_dot = X(4);
 
             % Calculate the denominator factor D
-            D = obj.m * obj.L^2 * (obj.M + obj.m * (1 - Cx^2));
 
             % Define the dynamics equations f(1) to f(4)
+            D = obj.m^2 * obj.L^2 * Sth^2  + obj.m * obj.M * obj.L^2 ...
+                +(obj.M+ obj.m) * obj.I;
+
             f(1) = X(2);
-            f(2) = (1/D) * (-(obj.m)^2 * (obj.L)^2 * (obj.g) * Cx *...
-              Sx + (obj.m) * (obj.L)^2 * ((obj.m) * (obj.L) * X(4)^2 ...
-                * Sx - (obj.d) * X(2))) + (obj.m) * (obj.L) * (obj.L)...
-                  * (1/D) * u;
+            f(2) = (obj.b * obj.m * obj.L * Cth  + obj.m^2*obj.L^2*obj.g ...
+                *Sth * Cth  + (obj.I + obj.m * obj.L^2)*...
+                (u - obj.c * x_dot + obj.m * obj.L * theta_dot^2 * Sth) )/D;
             f(3) = X(4);
-            f(4) = (1/D) * ((obj.m + obj.M) * (obj.m) * (obj.g) *...
-                (obj.L) * Sx - (obj.m) * (obj.L) * Cx * ((obj.m) *...
-                (obj.L) * X(4)^2 * Sx - (obj.d) * X(2))) - (obj.m) * ...
-                (obj.L) * Cx * (1/D) * u;
+            f(4) = -(u * obj.m * obj.L * Cth - obj.c * obj.m * obj.L * ...
+                x_dot * Cth + obj.m^2 * obj.L^2 ...
+                *theta_dot^2 * Sth * Cth + (obj.m + obj.M ) * (obj.b ...
+                * theta_dot + obj.m * obj.g * obj.L * Sth))/D;
 
             % Compute the Jacobian matrices A and B
             A1 = jacobian(f, X); % Compute the Jacobian matrix with respect to X
