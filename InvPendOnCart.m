@@ -30,12 +30,12 @@ classdef InvPendOnCart
     end
 
     properties(Constant)
-        g=9.81; %gravitational acceleration
+        g=9.81; % gravitational acceleration
 
         % properties for animation
-        W =0.32       %cart with;
-        H = 0.1;    % Cart Height
-        Wh = 0.05;   %wheel position
+        W =0.32      % cart with;
+        H = 0.1;     % Cart Height
+        Wh = 0.05;   % wheel position
     end
 
     methods
@@ -174,7 +174,7 @@ classdef InvPendOnCart
              px = x+l*sin(theta);             %Pendulum x Poaition
              cp = [x-(0.9*w)/2 wh/2 w h];     %Cart (Rectangle) Position
  
-             line([-1 1],[0 0],'linewidth',3,'color','black');%Base Line
+             line([-5 5],[0 0],'linewidth',3,'color','black');%Base Line
              hold on
              rectangle('Position',cp,'FaceColor','#D95319','EdgeColor',...
                 'None','Curvature',0.1);                       % Cart
@@ -189,7 +189,13 @@ classdef InvPendOnCart
              viscircles([x,y],0.02,'LineWidth',2,'color','white');% cart bob
              viscircles([px,py],0.01,'LineWidth',5,'Color','k');  % bob 
              axis equal
-             axis([-1 1 -0.4 1]);
+             
+             x_min = x - 1.1 * w / 2;
+             x_max = x + 1.1 * w / 2;
+             y_min = -0.2;
+             y_max = h + 0.2;
+
+             axis([-1+x_min 1+x_max -0.5+y_min 0.5+y_max]);
              grid minor
              hold off
         end

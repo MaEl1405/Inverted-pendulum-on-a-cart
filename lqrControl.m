@@ -49,7 +49,7 @@ ttime = tspan(1):h:tspan(end);
 %Animation loop to visualize the motion of the pendulum
 for ii = 1:100:length(T)
     Invp.motionPlot(X(ii, 1), X(ii, 3));
-    pause(0.1);
+    pause(0.01);
     if ii~=length(T)
       clf;
     end
@@ -59,13 +59,13 @@ for ii = 1:100:length(T)
 
 % Plot the state variables over time
 figure(2)
-plot(T, X(:, 1), 'LineWidth', 2)
+plot(T, X(:, 1), 'LineWidth', 1.75)
 hold on
-plot(T, X(:, 2), 'LineWidth', 2)
+plot(T, X(:, 2), 'LineWidth', 1.75)
 hold on
-plot(T, X(:, 3), 'LineWidth', 2)
+plot(T, X(:, 3), 'LineWidth', 1.75)
 hold on
-plot(T, X(:, 4), 'LineWidth', 2)
+plot(T, X(:, 4), 'LineWidth', 1.75)
 legend('x', 'v', '\theta', '\omega')
 grid on
 title('States')
