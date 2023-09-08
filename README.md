@@ -1,4 +1,5 @@
 # Inverted-pendulum-on-a-cart
+[Inverted Pendulum swing up](./animations/Swing_up_InvertedP.mp4.mp4)
 
 This project is a simulation and control implementation of an inverted pendulum mounted on a cart. The system's dynamics are modeled and controlled using MATLAB. The following files are part of this project:
 
